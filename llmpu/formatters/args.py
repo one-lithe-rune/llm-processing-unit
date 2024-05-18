@@ -3,9 +3,19 @@ from argparse import ArgumentParser, Namespace
 from .base import BaseSessionFormatter
 from .format_alpaca import AlpacaSessionFormatter
 from .format_llama3 import (
-    Llama3InstructSessionFormater,
+    Llama3SessionFormatter,
+    Llama3ChatSessionFormatter,
+    Llama3InstructSessionFormatter,
 )
 from .format_oaichat import OAIChatSessionFormatter
+
+session_formatters = {
+    "alpaca": AlpacaSessionFormatter,
+    "llama3": Llama3SessionFormatter,
+    "llama3instruct": Llama3InstructSessionFormatter,
+    "llama3chat": Llama3ChatSessionFormatter,
+    "oaichat": OAIChatSessionFormatter,
+}
 
 
 def add_args(parser: ArgumentParser, default_prompt="alpaca"):
@@ -28,8 +38,4 @@ def from_args(args: Namespace) -> BaseSessionFormatter:
     Answer a SessionFormatter class determined by appropriate
     attributes in the passed argsparse Namespace
     """
-    return {
-        "alpaca": AlpacaSessionFormatter,
-        "llama3": Llama3InstructSessionFormater,
-        "oaichat": OAIChatSessionFormatter,
-    }[args.ai_prompt_format]
+    return session_formatters[args.ai_prompt_format]

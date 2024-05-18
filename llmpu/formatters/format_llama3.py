@@ -21,7 +21,7 @@ class Llama3SessionFormatter(BaseSessionFormatter):
         return [{"role": "user", "content": f"<|begin_of_text|>{content}"}]
 
 
-class Llama3InstructSessionFormater(BaseSessionFormatter):
+class Llama3InstructSessionFormatter(BaseSessionFormatter):
     def __init__(self):
         self._role_formats = {
             "system": "system",
@@ -65,7 +65,7 @@ class Llama3InstructSessionFormater(BaseSessionFormatter):
         return result
 
 
-class Llama3ChatSessionFormatter(Llama3InstructSessionFormater):
+class Llama3ChatSessionFormatter(Llama3InstructSessionFormatter):
     def __init__(self):
         self._role_formats = {
             "system": "system",
