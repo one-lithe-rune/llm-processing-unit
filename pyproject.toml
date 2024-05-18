@@ -6,3 +6,47 @@ target-version = ["py311"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-processing-unit"
+version = "0.0.1"
+description = "A small Python library that treats a connection to an LLM as if it were analogous to the ALU of a very simple 8-Bit style processor of yore "
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+keywords = ["development", "llm-integration"]
+authors = [
+  {name = "Stefan Kapusniak", email = "skapusniak-llmpu@lithe-runes.com" }
+]
+maintainers = [
+  {name = "Stefan Kapusniak", email = "skapusniak-llmpu@lithe-runes.com" }
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+
+  # Pick your license as you wish
+  "License :: OSI Approved :: Apache Software License",
+
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [
+  "requests"
+]
+[project.optional-dependencies]
+dev = ["check-manifest"]
+test = ["coverage"]
+
+[project.urls]
+"Homepage" = "https://github.com/one-lithe-rune/llm-processing-unit/"
+"Bug Reports" = "https://github.com/one-lithe-rune/llm-processing-unit/issues"
+"Source" = "https://github.com/one-lithe-rune/llm-processing-unit/"
