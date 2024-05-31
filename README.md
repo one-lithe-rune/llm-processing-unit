@@ -10,33 +10,65 @@ I needed something small, clear and basic that would let me clarify my own ideas
 
 ## What's New
 
+- 31-May-2024: Bump version number for packaging to 0.0.2
+- 31-May-2024: Fixes for connecting to the actual OpenAI endpoint, rather than only local servers speaking the same protocol.
+- 21-May-2024: Added JSON encoders and decoder for saving and loading history lists from JSON files to `llmpu.history`, and `save_mem` and `load_mem` methods to the `LlmProcessingUnit` class.
 - 16-May-2024: Everything.
 
 ## Installation
 
-It's just this git repo for now, no [pypi](https://pypi.org/) package yet. So clone the repo or add it as a submodule to your project and `pip install -r` the `requirements.txt` into your python [virtual environment](https://docs.python.org/3/library/venv.html). You did make one, right?
+It's just this git repo for now, not up on [pypi](https://pypi.org/) as a full release yet. So add the an entry in your `requirements.txt` pointing to this repo, such as:
+
+```
+llm-processing-unit @ git+https://github.com/one-lithe-rune/llm-processing-unit.git
+```
+
+...and `pip install -r` the `requirements.txt` into your python [virtual environment](https://docs.python.org/3/library/venv.html). You did make one, right?
 
 ## Usage Example
 
 ```Python
 
 # You're obviously going to need a connection to an LLM of some kind.
-# This example is for a local server running on port 5001 that can
-# speak the OpenAI Chat protocol using REST. This is the only server
-# protocol I've implemented so far.
+# This example is connecting to a server that can speak the OpenAI
+# Chat protocol using REST. This is the only server protocol I've
+# implemented so far.
 
 # The LLM you're using will want things in some particular format,
 # I've implemented Alpaca, Llama 3 Chat, Llama 3 Character Chat,
 # Llama 3 base and Open AI Chat. Only the first three are much tested.
 
-from llmpu.formatters import Llama3InstructSessionFormatter
 from llmpu.sessions import OAICompatibleChatSession
 
-endpoint = OAICompatibleChatSession(
-    host="http://localhost:5001/",
-    initial_processors=[Llama3InstructSessionFormatter],
-    extra_props={ "temperature": 0.7 },
-)
+ai_server_type = "local"
+
+if ai_server_type = "local":
+    # Connecting to a local server that exposes an endpoint compatible
+    # with OpenAI, such as llama-cpp-python, koboldcpp or others, running
+    # a model that expects the Llama 3 instruct format
+    from llmpu.formatters import Llama3InstructSessionFormatter
+
+    endpoint = OAICompatibleChatSession(
+        host="http://localhost:5001/",
+        initial_processors=[Llama3InstructSessionFormatter],
+        extra_props={ "temperature": 0.7 },
+    )
+else:
+    import os
+    from llmpu.formatters import OAIChatSessionFormatter
+
+    # Connecting to the actual OpenAI server endpoint reading
+    # API key etc. from environment variables
+    endpoint = OAICompatibleChatSession(
+        host="https://api.openai.com/",
+        initial_processors=[OAIChatSessionFormatter],
+        host="http://localhost:5001/",
+        model="gpt4o",
+        extra_props={ "temperature": 0.7 },
+        api_key=os.environ["OPENAI_API_KEY"],
+        api_org=os.environ["OPENAI_API_ORG"] if "OPEN_AI_API_ORG" in os.environ else None,
+        api_proj=os.environ["OPENAI_API_PROJ"] if "OPEN_AI_API_PROJ" in os.environ else None,
+    )
 
 # The processing unit is implemented by the LlmProcessingUnit class
 from llmpu import LlmProcessingUnit
@@ -98,12 +130,13 @@ llm.evaluate()
 
 ## Obligatory Chatbot Example
 
-If you're cloned the repo, activated your venv and installed the requirements, you should be able to run the obligatory ChatBot example by doing `python -m llmpu.examples.chat`. See the connection options by doing `python -m llmpu.examples.chat --help`
+If you've cloned the repo, activated your venv and installed the requirements, you should be able to run the obligatory ChatBot example by doing `python -m llmpu.examples.chat`. See the connection options by doing `python -m llmpu.examples.chat --help`
 
 ## What's 'Supported'
 
 - Python 3.11
-- As much of the OpenAI chat endpoint protocol sufficient to work against a compatible local AI server endpoint in non-streaming mode but not necessarily enough for a real OpenAI endpoint.
-- Formatters for [Alpaca](https://github.com/tatsu-lab/stanford_alpaca?tab=readme-ov-file#data-release), [Llama 3 Chat](https://llama.meta.com/docs/model-cards-and-prompt-formats/meta-llama-3), Llama 3 Character Chat, [Llama 3 Base](https://llama.meta.com/docs/model-cards-and-prompt-formats/meta-llama-3) and Open AI Chat formats. Only the first three can be considered tested.
+- As much of the OpenAI chat endpoint protocol sufficient to work against a compatible local AI server endpoint in non-streaming mode, and the real OpenAI chat endpoint also in non-streaming mode.
+- Formatters for [Alpaca](https://github.com/tatsu-lab/stanford_alpaca?tab=readme-ov-file#data-release), [Llama 3 Chat](https://llama.meta.com/docs/model-cards-and-prompt-formats/meta-llama-3), Llama 3 Character Chat, [Llama 3 Base](https://llama.meta.com/docs/model-cards-and-prompt-formats/meta-llama-3) and Open AI Chat formats. Make sure you use the right (or at least sensible) formatter for the model you will be using.
 
 I've been developing this against my local instance of [koboldcpp](https://github.com/LostRuins/koboldcpp)/[koboldcpp-rocm](https://github.com/YellowRoseCx/koboldcpp-rocm/) on Linux with various GGUF quantised [Llama 3 8B](https://lama.meta.com/docs/get-started/) variants. So that *should* work.
+I've now tested against the actual OpenAI api chat endpoint, so that should also work.

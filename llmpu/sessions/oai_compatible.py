@@ -2,12 +2,16 @@ import requests
 
 from llmpu.formatters import BaseSessionFormatter
 from llmpu.history import HistoryTurn
-from .base import BaseSession
+from .base import BaseSession, SessionError
+
+
+class OAISessionError(SessionError):
+    pass
 
 
 class OAICompatibleChatSession(BaseSession):
     """
-    A session using a OpenAI Chat completions compatible endpoint
+    A session using an OpenAI Chat completions compatible endpoint
     """
 
     def __init__(
@@ -36,9 +40,6 @@ class OAICompatibleChatSession(BaseSession):
             self._session.headers["OpenAI-Organization"] = api_org
         if api_proj is not None:
             self._session.headers["OpenAI-Project"] = api_proj
-
-        self._session.headers = self._session_headers
-
         if model is not None:
             self._extra_props["model"] = model
 
@@ -63,4 +64,8 @@ class OAICompatibleChatSession(BaseSession):
         )
 
         self._last_response = response.json()
-        return self._last_response["choices"][0]["message"]
+        try:
+            response.raise_for_status()
+            return self._last_response["choices"][0]["message"]
+        except requests.exceptions.HTTPError:
+            raise OAISessionError(self._last_response)

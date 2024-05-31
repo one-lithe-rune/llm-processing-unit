@@ -9,6 +9,10 @@ from llmpu.formatters import BaseSessionFormatter
 Jsonable = dict[str, "Jsonable"] | list["Jsonable"] | str | int | float | bool | None
 
 
+class SessionError(Exception):
+    pass
+
+
 class BaseSession(ABC):
     """
     Base class for retrieving responses from AI provider endpoint
