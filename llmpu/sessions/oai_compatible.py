@@ -17,12 +17,30 @@ class OAICompatibleChatSession(BaseSession):
         initial_processors: list[BaseSessionFormatter] = None,
         token_limit: int = 1024,
         extra_props: dict = None,
+        model: str = None,
         api_key: str = None,
+        api_org: str = None,
+        api_proj: str = None,
     ):
         super().__init__(host, path, initial_processors, token_limit, extra_props)
-        if api_key is not None:
-            self._session.headers = {"Authorization", f"Bearer {api_key}"}
+
+        self._session_headers: dict[str, str] = {}
         self._api_key: str = api_key
+        self._api_org: str = api_org
+        self._api_proj: str = api_proj
+        self._model: str = model
+
+        if api_key is not None:
+            self._session.headers["Authorization"] = f"Bearer {api_key}"
+        if api_org is not None:
+            self._session.headers["OpenAI-Organization"] = api_org
+        if api_proj is not None:
+            self._session.headers["OpenAI-Project"] = api_proj
+
+        self._session.headers = self._session_headers
+
+        if model is not None:
+            self._extra_props["model"] = model
 
     def close(self):
         self._session.close()
