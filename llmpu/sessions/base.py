@@ -9,6 +9,10 @@ from llmpu.formatters import BaseSessionFormatter
 Jsonable = dict[str, "Jsonable"] | list["Jsonable"] | str | int | float | bool | None
 
 
+class SessionError(Exception):
+    pass
+
+
 class BaseSession(ABC):
     """
     Base class for retrieving responses from AI provider endpoint
@@ -21,7 +25,6 @@ class BaseSession(ABC):
         initial_processors: list[BaseSessionFormatter] = None,
         token_limit: int = 1024,
         extra_props: dict = None,
-        history: list[HistoryTurn] = None,
     ):
         self._session: requests.Session = requests.Session()
         self._endpoint = urljoin(host, path)
@@ -29,7 +32,6 @@ class BaseSession(ABC):
         self._extra_props = extra_props if extra_props is not None else dict()
         self._last_response: Jsonable = None
 
-        self.history = history if history else []
         self.processors = (
             initial_processors if initial_processors is not None else list()
         )

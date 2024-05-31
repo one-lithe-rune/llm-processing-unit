@@ -1,14 +1,17 @@
 import requests
-from urllib.parse import urljoin
 
 from llmpu.formatters import BaseSessionFormatter
 from llmpu.history import HistoryTurn
-from .base import BaseSession, Jsonable
+from .base import BaseSession, SessionError
+
+
+class OAISessionError(SessionError):
+    pass
 
 
 class OAICompatibleChatSession(BaseSession):
     """
-    A session using a OpenAI Chat completions compatible endpoint
+    A session using an OpenAI Chat completions compatible endpoint
     """
 
     def __init__(
@@ -18,24 +21,27 @@ class OAICompatibleChatSession(BaseSession):
         initial_processors: list[BaseSessionFormatter] = None,
         token_limit: int = 1024,
         extra_props: dict = None,
-        history: list = None,
+        model: str = None,
         api_key: str = None,
+        api_org: str = None,
+        api_proj: str = None,
     ):
-        self._session: requests.Session = requests.Session()
-        if api_key is not None:
-            self._session.headers = {"Authorization", f"Bearer {api_key}"}
-        self._endpoint: str = urljoin(host, path)
-        self._token_limit: int = token_limit
-        self._extra_props: dict[str, str] = (
-            extra_props if extra_props is not None else dict()
-        )
-        self._api_key: str = api_key
-        self._last_response: Jsonable = None
+        super().__init__(host, path, initial_processors, token_limit, extra_props)
 
-        self.history = history if history else []
-        self.processors = (
-            initial_processors if initial_processors is not None else list()
-        )
+        self._session_headers: dict[str, str] = {}
+        self._api_key: str = api_key
+        self._api_org: str = api_org
+        self._api_proj: str = api_proj
+        self._model: str = model
+
+        if api_key is not None:
+            self._session.headers["Authorization"] = f"Bearer {api_key}"
+        if api_org is not None:
+            self._session.headers["OpenAI-Organization"] = api_org
+        if api_proj is not None:
+            self._session.headers["OpenAI-Project"] = api_proj
+        if model is not None:
+            self._extra_props["model"] = model
 
     def close(self):
         self._session.close()
@@ -58,4 +64,8 @@ class OAICompatibleChatSession(BaseSession):
         )
 
         self._last_response = response.json()
-        return self._last_response["choices"][0]["message"]
+        try:
+            response.raise_for_status()
+            return self._last_response["choices"][0]["message"]
+        except requests.exceptions.HTTPError:
+            raise OAISessionError(self._last_response)
