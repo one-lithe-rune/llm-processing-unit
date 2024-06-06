@@ -64,18 +64,31 @@ class LlmProcessingUnit:
 
         return current
 
-    def load_sys(self, value):
+    def load_sys(self, value: str | list[str]):
         """
-        Load the passed value into the system prompt register as a turn.
+        Load the passed value or the contents of the passed memory location
+        into the system prompt register as a single turn.
         """
-        self._registers["system"] = [HistoryTurn(role="system", content=value)]
+        content = value
+        if isinstance(value, list):
+            content = "\n\n".join(
+                [value.content for turn in self._get_mem_location(value)]
+            )
+
+        self._registers["system"] = [HistoryTurn(role="system", content=content)]
         return self
 
-    def load_ins(self, value):
+    def load_ins(self, value: str | list[str]):
         """
-        Load the passed value into the instruction register as a turn.
+        Load the passed value into the instruction register as a single turn.
         """
-        self._registers["instruction"] = [HistoryTurn(role="user", content=value)]
+        content = value
+        if isinstance(value, list):
+            content = "\n\n".join(
+                [value.content for turn in self._get_mem_location(value)]
+            )
+
+        self._registers["instruction"] = [HistoryTurn(role="user", content=content)]
         return self
 
     def load_context(self, reg_idx: int, mem_path: list[str | int]):
@@ -151,6 +164,10 @@ class LlmProcessingUnit:
         passed register, removing it from the list in the memory location.
         Any existing turns in the register will be replaced with the
         popped turn.
+
+        The current turn's role will not be transferred if it is popped into
+        either the 'system' or 'instruction' registers, as they set their
+        own fixed roles.
         """
 
         if register not in self._registers:
@@ -162,7 +179,41 @@ class LlmProcessingUnit:
         if not isinstance(mem_value, list):
             raise ValueError(f"Invalid memory location for pop: {mem_path}")
 
-        self._registers[register] = mem_value.pop()
+        if register == "system":
+            self.load_sys(mem_value.pop().content)
+        elif register == "instruction":
+            self.load_ins(mem_value.pop().content)
+        else:
+            self._registers[register] = mem_value.pop()
+
+        return self
+
+    def peek(self, mem_path: list[str], register: str):
+        """
+        Copy the last list turn at a memory dictionary location into the
+        passed register, any existing turns in the register will be
+        replaced with the peeked turn.
+
+        The peeked turn's role will not be transferred when copied into
+        either the 'system' or 'instruction' registers, as they set their
+        own fixed roles.
+        """
+
+        if register not in self._registers:
+            raise ValueError(f"Unknown register {register}")
+
+        leaf_key = mem_path[-1]
+        mem_parent = self._get_mem_location(mem_path[:-1])
+        mem_value = mem_parent[leaf_key]
+        if not isinstance(mem_value, list):
+            raise ValueError(f"Invalid memory location for pop: {mem_path}")
+
+        if register == "system":
+            self.load_sys(mem_value[-1].content)
+        elif register == "instruction":
+            self.load_ins(mem_value[-1].content)
+        else:
+            self._registers[register] = mem_value[-1]
 
         return self
 
